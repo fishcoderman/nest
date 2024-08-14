@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="root">
+      <button onclick="run1()">get</button>
+      <button onclick="post()">post</button>
+      <button onclick="run2()">patch</button>
+      <button onclick="run3()">get user</button>
+      <button onclick="run4()">get guards</button>
+      <button onclick="run5()">get interceptor</button>
+      <button onclick="run6()">get pipe</button>
+      <div style="margin-top: 30px">
+        <input id="fileInput" type="file" multiple />
+      </div>
+    </div>
+    <script>
+      const fileInput = document.querySelector('#fileInput');
+
+      async function formData() {
+        const data = new FormData();
+        data.set('name', '光');
+        data.set('age', 20);
+
+        [...fileInput.files].forEach((item) => {
+          data.append('files', item);
+        });
+
+        const len = fileInput.files.length;
+        console.info('len', len);
+        const res = await axios.post(
+          `/file/${len === 1 ? 'single' : 'multiple'}`,
+          data,
+        );
+        console.log(res);
+      }
+
+      fileInput.onchange = formData;
+
+      // http://localhost:8080/static/index.html
+      function run1() {
+        axios
+          .get('/about/1239')
+          .then(function (response) {
+            console.log(response);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+
+      function post() {
+        axios
+          .post('/about/post/123', { name: 'jack-post' })
+          .then(function (response) {
+            console.log(response);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+
+      function run2() {
+        axios
+          .patch('/about/123', { name: 'jack123' })
+          .then(function (response) {
+            console.log(response);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+
+      function run3() {
+        axios
+          .get('/about/user')
+          .then(function (response) {
+            console.log(response.data);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+
+      function run4() {
+        axios
+          .get('/about/guards')
+          .then(function (response) {
+            console.log(response.data);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+      function run5() {
+        axios
+          .get('/about/timeInterceptor')
+          .then(function (response) {
+            console.log(response.data);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+      function run6() {
+        axios
+          .get('/about/pipe', {
+            params: {
+              num: '120',
+            },
+          })
+          .then(function (response) {
+            console.log(response.data);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+    </script>
+  </body>
+</html>

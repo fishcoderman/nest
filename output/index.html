@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image with Background Music</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-image: url('./bg.jpg');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+      }
+
+      /* audio {
+        margin-top: 60px;
+      } */
+
+      #app {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <audio id="music-player" controls autoplay loop>
+        <source src="v.mp3" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+
+    <script>
+      const app = document.getElementById('app');
+      const musicPlayer = document.getElementById('music-player');
+
+      app.addEventListener('click', function () {
+        app.style.display = 'none';
+      });
+
+      if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+        // 当前设备是移动设备
+        document.body.style.backgroundImage = "url('./bg2.jpg')";
+        musicPlayer.style.transform = "rotate(90deg)";
+      }
+
+      // docker cp nginx-80:/etc/nginx/nginx.conf /home/nginx/nginx.conf
+      // docker cp /home/nginx/nginx.conf nginx-80:/etc/nginx/nginx.conf
+    </script>
+  </body>
+</html>
