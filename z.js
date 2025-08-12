@@ -1,4 +1,5 @@
-// PORT=4000  node z.js
+const os = require('os');
 
-console.info('run--', process.env.PORT);
-// export PORT=4002 node z.js
+const homedir = os.homedir();
+
+console.log(homedir);

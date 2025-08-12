@@ -3,40 +3,90 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
+  Inject,
+  Res,
+  Headers,
+  UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
+import { LoginGuard } from './login.guard';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @Inject(JwtService)
+  private jwtService: JwtService;
+
+  @Get('home')
+  @UseGuards(LoginGuard)
+  aaa() {
+    return 'aaa';
   }
 
-  @Get()
-  findAll() {
-    return this.userService.findAll();
+  @Get('about')
+  @UseGuards(LoginGuard)
+  bbb() {
+    return 'bbb';
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  @Post('login')
+  async login(
+    @Body() user: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const foundUser = await this.userService.login(user);
+
+    if (foundUser) {
+      const token = await this.jwtService.signAsync({
+        user: {
+          id: foundUser.id,
+          username: foundUser.username,
+        },
+      });
+      res.setHeader('token', token);
+      return 'login success';
+    } else {
+      return 'login fail';
+    }
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  @Post('register')
+  async register(@Body() user: RegisterDto) {
+    return await this.userService.register(user);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @Get('analysis')
+  analysis(
+    @Headers('authorization') authorization: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (authorization) {
+      console.info('authorization', authorization);
+      try {
+        const token = authorization.split(' ')[1];
+        const data = this.jwtService.verify(token);
+        console.info('data', data);
+        const newToken = this.jwtService.sign({
+          count: data.count + 1,
+        });
+        response.setHeader('token', newToken);
+        return data.count + 1;
+      } catch (e) {
+        console.log(e);
+        throw new UnauthorizedException();
+      }
+    } else {
+      const newToken = this.jwtService.sign({
+        count: 1,
+      });
+      response.setHeader('token', newToken);
+      return 1;
+    }
   }
 }

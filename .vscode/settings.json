@@ -2,5 +2,17 @@
   "editor.formatOnSave": false,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
-  }
+  },
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 3306,
+      "driver": "PostgreSQL",
+      "name": "nest",
+      "username": "root",
+      "password": "zt123456",
+      "database": "my_new_db"
+    }
+  ]
 }
