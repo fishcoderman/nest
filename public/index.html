@@ -20,6 +20,8 @@
       </div>
     </div>
     <script>
+      // http://localhost:8080/static/index.html
+      
       const fileInput = document.querySelector('#fileInput');
 
       async function formData() {
@@ -42,7 +44,6 @@
 
       fileInput.onchange = formData;
 
-      // http://localhost:8080/static/index.html
       function run1() {
         axios
           .get('/about/1239')
