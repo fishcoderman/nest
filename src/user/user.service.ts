@@ -6,6 +6,7 @@ import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { Result } from '../common/result';
 import * as crypto from 'crypto';
 
 function md5(str) {
@@ -50,10 +51,10 @@ export class UserService {
 
     try {
       await this.userRepository.save(newUser);
-      return '注册成功';
+      return Result.success(null, '注册成功');
     } catch (e) {
       this.logger.error(e, UserService);
-      return '注册失败';
+      return Result.error('注册失败');
     }
   }
 
@@ -85,17 +86,16 @@ export class UserService {
       return safeUser;
     });
 
-    return {
-      data: safeUsers,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrevious: page > 1,
-      },
+    const pagination = {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page * limit < total,
+      hasPrevious: page > 1,
     };
+
+    return Result.paginate(safeUsers, pagination, '用户列表查询成功');
   }
 
   async getUserById(id: string) {
@@ -116,11 +116,7 @@ export class UserService {
         throw new HttpException('用户不存在', 404);
       }
 
-      return {
-        success: true,
-        data: user,
-        message: '获取用户信息成功',
-      };
+      return Result.success(user, '获取用户信息成功');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -187,11 +183,7 @@ export class UserService {
         select: ['id', 'username', 'createTime', 'updateTime'],
       });
 
-      return {
-        success: true,
-        data: updatedUser,
-        message: '用户信息更新成功',
-      };
+      return Result.success(updatedUser, '用户信息更新成功');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -227,14 +219,13 @@ export class UserService {
         throw new HttpException('删除用户失败', 500);
       }
 
-      return {
-        success: true,
-        message: `用户 "${existingUser.username}" 删除成功`,
-        data: {
+      return Result.success(
+        {
           id: existingUser.id,
           username: existingUser.username,
         },
-      };
+        `用户 "${existingUser.username}" 删除成功`,
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

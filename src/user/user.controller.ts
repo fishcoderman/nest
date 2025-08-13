@@ -14,6 +14,7 @@ import {
   UsePipes,
   ValidationPipe,
   UnauthorizedException,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { LoginDto } from './dto/login.dto';
@@ -23,6 +24,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { LoginGuard } from './login.guard';
+import { Result } from '../common/result';
 
 @Controller('user')
 export class UserController {
@@ -31,6 +33,12 @@ export class UserController {
   @Inject(JwtService)
   private jwtService: JwtService;
 
+  @Get('info')
+  @UseGuards(LoginGuard)
+  getUserInfo(@Req() req) {
+    return Result.success(req.user, '获取用户信息成功');
+  }
+
   @Get('home')
   @UseGuards(LoginGuard)
   aaa() {
@@ -38,6 +46,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @UseGuards(LoginGuard)
   async getUserById(@Param('id') id: string) {
     console.info('id', id);
     try {
@@ -53,6 +62,7 @@ export class UserController {
   }
 
   @Get()
+  @UseGuards(LoginGuard)
   async getUserPage(@Query() getUsersDto: GetUsersDto) {
     return await this.userService.getUsers(getUsersDto);
   }
@@ -77,6 +87,7 @@ export class UserController {
   }
 
   @Put(':id')
+  @UseGuards(LoginGuard)
   @UsePipes(
     new ValidationPipe({
       whitelist: true,
@@ -102,6 +113,7 @@ export class UserController {
   }
 
   @Delete(':id')
+  @UseGuards(LoginGuard)
   async deleteUser(@Param('id') id: string) {
     try {
       return await this.userService.deleteUser(id);
@@ -138,14 +150,13 @@ export class UserController {
           },
         });
         res.setHeader('token', token);
-        return {
-          success: true,
-          message: '登录成功',
-          data: {
+        return Result.success(
+          {
             id: foundUser.id,
             username: foundUser.username,
           },
-        };
+          '登录成功',
+        );
       } else {
         throw new UnauthorizedException('登录失败');
       }

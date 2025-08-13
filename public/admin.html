@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Management</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        background-color: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+      }
+      .admin-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 1200px;
+        height: 90vh;
+        overflow-y: auto;
+      }
+      .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+      }
+      h1, h2, h3 {
+        text-align: center;
+        color: #333;
+        margin: 0;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #555;
+      }
+      input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .error {
+        color: red;
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+      .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      .user-table th,
+      .user-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+      }
+      .user-table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+      }
+      .user-table tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+      }
+      .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        width: auto;
+      }
+      .btn-edit {
+        background-color: #28a745;
+        color: white;
+      }
+      .btn-delete {
+        background-color: #dc3545;
+        color: white;
+      }
+      .btn-add {
+        background-color: #007bff;
+        color: white;
+        margin-bottom: 1rem;
+        width: auto;
+        padding: 10px 20px;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      .modal.show {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+      }
+      .close {
+        font-size: 2rem;
+        cursor: pointer;
+        color: #999;
+        line-height: 1;
+      }
+      .close:hover {
+        color: #333;
+      }
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1rem;
+        gap: 10px;
+      }
+      .pagination button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background: white;
+        cursor: pointer;
+        border-radius: 4px;
+        width: auto;
+      }
+      .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .pagination span {
+        font-size: 0.9rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      function App() {
+        const [token, setToken] = useState(localStorage.getItem('token'));
+        const [user, setUser] = useState(null);
+        const [username, setUsername] = useState('');
+        const [password, setPassword] = useState('');
+        const [error, setError] = useState('');
+        const [isLogin, setIsLogin] = useState(true);
+        const [confirmPassword, setConfirmPassword] = useState('');
+        
+        // 用户管理相关状态
+        const [users, setUsers] = useState([]);
+        const [loading, setLoading] = useState(false);
+        const [showModal, setShowModal] = useState(false);
+        const [modalType, setModalType] = useState('add'); // 'add' or 'edit'
+        const [currentUser, setCurrentUser] = useState({ id: '', username: '', password: '' });
+        const [pagination, setPagination] = useState({
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0
+        });
+
+        // 检查用户登录状态
+        useEffect(() => {
+          if (token) {
+            fetch('/user/info', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            })
+              .then((res) => {
+                if (res.ok) {
+                  return res.json();
+                }
+                throw new Error('Session expired');
+              })
+              .then((result) => {
+                if (result.code === 200) {
+                  setUser(result.data);
+                } else {
+                  throw new Error(result.message || 'Session expired');
+                }
+              })
+              .catch((err) => {
+                console.error(err);
+                setToken(null);
+                localStorage.removeItem('token');
+              });
+          }
+        }, [token]);
+
+        // 获取用户列表
+        const fetchUsers = async (page = 1) => {
+          if (!token) return;
+          
+          setLoading(true);
+          try {
+            const response = await fetch(`/user?page=${page}&limit=10`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.code === 200) {
+                setUsers(result.data.list);
+                setPagination(result.data.pagination);
+              } else {
+                throw new Error(result.message || 'Failed to fetch users');
+              }
+            } else {
+              throw new Error('Failed to fetch users');
+            }
+          } catch (err) {
+            console.error('Fetch users error:', err);
+            setError(err.message);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        // 创建用户
+        const createUser = async (userData) => {
+          try {
+            const response = await fetch('/user/register', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(userData),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.code === 200) {
+                alert('用户创建成功');
+                fetchUsers(pagination.page);
+                setShowModal(false);
+                setCurrentUser({ id: '', username: '', password: '' });
+              } else {
+                throw new Error(result.message || 'Failed to create user');
+              }
+            } else {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'Failed to create user');
+            }
+          } catch (err) {
+            setError(err.message);
+          }
+        };
+
+        // 更新用户
+        const updateUser = async (id, userData) => {
+          try {
+            const response = await fetch(`/user/${id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(userData),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.code === 200) {
+                alert('用户更新成功');
+                fetchUsers(pagination.page);
+                setShowModal(false);
+                setCurrentUser({ id: '', username: '', password: '' });
+              } else {
+                throw new Error(result.message || 'Failed to update user');
+              }
+            } else {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'Failed to update user');
+            }
+          } catch (err) {
+            setError(err.message);
+          }
+        };
+
+        // 删除用户
+        const deleteUser = async (id, username) => {
+          if (!confirm(`确定要删除用户 "${username}" 吗？`)) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`/user/${id}`, {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.code === 200) {
+                alert('用户删除成功');
+                fetchUsers(pagination.page);
+              } else {
+                throw new Error(result.message || 'Failed to delete user');
+              }
+            } else {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'Failed to delete user');
+            }
+          } catch (err) {
+            setError(err.message);
+          }
+        };
+
+        // 打开添加用户模态框
+        const openAddModal = () => {
+          setModalType('add');
+          setCurrentUser({ id: '', username: '', password: '' });
+          setShowModal(true);
+          setError('');
+        };
+
+        // 打开编辑用户模态框
+        const openEditModal = (userData) => {
+          setModalType('edit');
+          setCurrentUser({ ...userData, password: '' });
+          setShowModal(true);
+          setError('');
+        };
+
+        // 处理模态框表单提交
+        const handleModalSubmit = (e) => {
+          e.preventDefault();
+          
+          if (modalType === 'add') {
+            if (!currentUser.username || !currentUser.password) {
+              setError('用户名和密码不能为空');
+              return;
+            }
+            createUser({
+              username: currentUser.username,
+              password: currentUser.password
+            });
+          } else {
+            if (!currentUser.username) {
+              setError('用户名不能为空');
+              return;
+            }
+            const updateData = { username: currentUser.username };
+            if (currentUser.password) {
+              updateData.password = currentUser.password;
+            }
+            updateUser(currentUser.id, updateData);
+          }
+        };
+
+        // 初始加载用户列表
+        useEffect(() => {
+          if (token && user) {
+            fetchUsers();
+          }
+        }, [user]);
+
+        const handleLogin = async (e) => {
+          e.preventDefault();
+          setError('');
+          try {
+            const response = await fetch('/user/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ username, password }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.code === 200) {
+                const newToken = response.headers.get('token');
+                if (newToken) {
+                  localStorage.setItem('token', newToken);
+                  setToken(newToken);
+                  // 清空表单
+                  setUsername('');
+                  setPassword('');
+                } else {
+                  throw new Error('Token not found in response');
+                }
+              } else {
+                throw new Error(result.message || 'Login failed');
+              }
+            } else {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'Login failed');
+            }
+          } catch (err) {
+            setError(err.message);
+          }
+        };
+
+        const handleRegister = async (e) => {
+          e.preventDefault();
+          setError('');
+          
+          if (password !== confirmPassword) {
+            setError('密码确认不匹配');
+            return;
+          }
+
+          try {
+            const response = await fetch('/user/register', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ username, password }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.code === 200) {
+                alert('注册成功！请登录');
+                setIsLogin(true);
+                // 清空表单
+                setUsername('');
+                setPassword('');
+                setConfirmPassword('');
+              } else {
+                throw new Error(result.message || 'Registration failed');
+              }
+            } else {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'Registration failed');
+            }
+          } catch (err) {
+            setError(err.message);
+          }
+        };
+
+        const handleLogout = () => {
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem('token');
+          setUsername('');
+          setPassword('');
+          setConfirmPassword('');
+        };
+
+        // 已登录用户界面
+        if (token && user) {
+          return (
+            <div className="admin-container">
+              <div className="admin-header">
+                <h2>用户管理系统</h2>
+                <div>
+                  <span>欢迎, {user.username}! </span>
+                  <button onClick={handleLogout} style={{marginLeft: '10px', width: 'auto', padding: '8px 16px'}}>退出登录</button>
+                </div>
+              </div>
+
+              {error && <p className="error">{error}</p>}
+              
+              <button className="btn btn-add" onClick={openAddModal}>
+                添加用户
+              </button>
+
+              {loading ? (
+                <p>加载中...</p>
+              ) : (
+                <>
+                  <table className="user-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>创建时间</th>
+                        <th>更新时间</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id}>
+                          <td>{user.id}</td>
+                          <td>{user.username}</td>
+                          <td>{new Date(user.createTime).toLocaleDateString()}</td>
+                          <td>{new Date(user.updateTime).toLocaleDateString()}</td>
+                          <td>
+                            <div className="action-buttons">
+                              <button 
+                                className="btn btn-edit" 
+                                onClick={() => openEditModal(user)}
+                              >
+                                编辑
+                              </button>
+                              <button 
+                                className="btn btn-delete" 
+                                onClick={() => deleteUser(user.id, user.username)}
+                              >
+                                删除
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* 分页 */}
+                  <div className="pagination">
+                    <button 
+                      disabled={pagination.page === 1}
+                      onClick={() => fetchUsers(pagination.page - 1)}
+                    >
+                      上一页
+                    </button>
+                    <span>
+                      第 {pagination.page} 页 / 共 {pagination.totalPages} 页 
+                      (总计 {pagination.total} 条记录)
+                    </span>
+                    <button 
+                      disabled={!pagination.hasNext}
+                      onClick={() => fetchUsers(pagination.page + 1)}
+                    >
+                      下一页
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* 模态框 */}
+              <div className={`modal ${showModal ? 'show' : ''}`}>
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h3>{modalType === 'add' ? '添加用户' : '编辑用户'}</h3>
+                    <span className="close" onClick={() => setShowModal(false)}>×</span>
+                  </div>
+                  
+                  <form onSubmit={handleModalSubmit}>
+                    {error && <p className="error">{error}</p>}
+                    
+                    <div className="form-group">
+                      <label>用户名</label>
+                      <input
+                        type="text"
+                        value={currentUser.username}
+                        onChange={(e) => setCurrentUser({...currentUser, username: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>
+                        {modalType === 'add' ? '密码' : '新密码 (留空则不修改)'}
+                      </label>
+                      <input
+                        type="password"
+                        value={currentUser.password}
+                        onChange={(e) => setCurrentUser({...currentUser, password: e.target.value})}
+                        required={modalType === 'add'}
+                      />
+                    </div>
+                    
+                    <button type="submit">
+                      {modalType === 'add' ? '添加' : '更新'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // 登录/注册界面
+        return (
+          <div className="container">
+            <h1>{isLogin ? 'Admin Login' : 'Admin Register'}</h1>
+            <form onSubmit={isLogin ? handleLogin : handleRegister}>
+              {error && <p className="error">{error}</p>}
+              <div className="form-group">
+                <label htmlFor="username">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {!isLogin && (
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm Password</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+              <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
+            </form>
+            <p style={{ textAlign: 'center', marginTop: '1rem' }}>
+              {isLogin ? (
+                <>
+                  没有账号？{' '}
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsLogin(false);
+                      setError('');
+                      setUsername('');
+                      setPassword('');
+                      setConfirmPassword('');
+                    }}
+                    style={{ color: '#007bff', textDecoration: 'none' }}
+                  >
+                    立即注册
+                  </a>
+                </>
+              ) : (
+                <>
+                  已有账号？{' '}
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsLogin(true);
+                      setError('');
+                      setUsername('');
+                      setPassword('');
+                      setConfirmPassword('');
+                    }}
+                    style={{ color: '#007bff', textDecoration: 'none' }}
+                  >
+                    立即登录
+                  </a>
+                </>
+              )}
+            </p>
+          </div>
+        );
+      }
+
+      const container = document.getElementById('root');
+      const root = ReactDOM.createRoot(container);
+      root.render(<App />);
+    </script>
+  </body>
+</html>

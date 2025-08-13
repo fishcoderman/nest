@@ -18,7 +18,7 @@ import { FoodModule } from './food/food.module';
       username: 'root',
       password: 'zt123456',
       database: 'my_new_db',
-      synchronize: true,
+      synchronize: false,
       logging: true,
       entities: [User],
       poolSize: 10,
